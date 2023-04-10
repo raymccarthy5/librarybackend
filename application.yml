@@ -1,2 +1,2 @@
-runtime: java17
+runtime: java18
 entrypoint: 'java -jar librarybackend-0.0.2-SNAPSHOT.jar'
