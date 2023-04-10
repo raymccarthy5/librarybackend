@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 @RestController
 @RequestMapping(value = "api/v1/books")
-@CrossOrigin(origins = "https://library-management-frontend.herokuapp.com/")
+@CrossOrigin(origins = {"https://library-management-frontend.herokuapp.com", "http://localhost:3000"})
 public class BookController {
 
     @Autowired
