@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(value = "api/v1/rate")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://library-management-frontend.herokuapp.com/")
 public class BookRatingController {
 
     @Autowired

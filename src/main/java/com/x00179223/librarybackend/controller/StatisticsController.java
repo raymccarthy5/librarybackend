@@ -15,7 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(value = "api/v1/stats")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://library-management-frontend.herokuapp.com/")
 public class StatisticsController {
 
     @Autowired

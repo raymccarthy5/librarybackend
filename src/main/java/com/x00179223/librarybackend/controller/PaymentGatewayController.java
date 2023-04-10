@@ -5,7 +5,7 @@ import com.x00179223.librarybackend.dto.ChargeResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 @RestController
-@CrossOrigin("http://localhost:3000")
+@CrossOrigin("https://library-management-frontend.herokuapp.com/")
 @RequestMapping("/api/v1/payment")
 public class PaymentGatewayController {
 

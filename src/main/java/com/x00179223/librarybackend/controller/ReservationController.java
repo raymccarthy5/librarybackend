@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/reservations")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://library-management-frontend.herokuapp.com/")
 public class ReservationController {
 
     @Autowired

@@ -15,7 +15,7 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("api/v1/users")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://library-management-frontend.herokuapp.com/")
 public class UserController {
 
     @Autowired
