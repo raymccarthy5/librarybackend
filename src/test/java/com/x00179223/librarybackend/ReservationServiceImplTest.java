@@ -373,13 +373,6 @@ public class ReservationServiceImplTest {
 
         assertThrows(EntityNotFoundException.class, () -> reservationService.findReservationById(reservation.getId()));
     }
-
-    @Test
-    public void findOverduePickups_ShouldReturnOverduePickups() {
-
-    }
-
-
     @Test
     void addFine_ShouldAddFineToUser() {
         Reservation reservation = Reservation.builder()
