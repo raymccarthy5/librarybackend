@@ -6,354 +6,395 @@ import com.x00179223.librarybackend.model.User;
 import com.x00179223.librarybackend.repository.ReservationRepository;
 import com.x00179223.librarybackend.service.*;
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-class ReservationServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+public class ReservationServiceImplTest {
+
+    @InjectMocks
+    private ReservationServiceImpl reservationService;
 
     @Mock
-    ReservationRepository reservationRepository;
+    private ReservationRepository reservationRepository;
 
     @Mock
-    BookService bookService;
+    private BookService bookService;
 
     @Mock
-    UserService userService;
+    private UserService userService;
 
     @Mock
-    EmailService emailService;
-
-    @Mock
-    ReservationServiceImpl reservationService;
+    private EmailService emailService;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        reservationService = new ReservationServiceImpl(reservationRepository, bookService, userService, emailService);
+    public void setUp() {
     }
 
     @Test
-    void reserveBook_validInput_success() {
+    public void reserveBook_ShouldReserveBookSuccessfully() {
         Long bookId = 1L;
         Long userId = 2L;
-
-        Book book = new Book();
-        book.setQuantityAvailable(1);
-
-        User user = new User();
-
-        Reservation reservation = new Reservation();
-        reservation.setBook(book);
-        reservation.setUser(user);
-        reservation.setReservedAt(LocalDateTime.now());
-        reservation.setPickUpBy(LocalDateTime.now().plusDays(7));
+        Book book = Book.builder().id(bookId).title("Test Book").quantityAvailable(5).build();
+        User user = User.builder().id(userId).email("test@example.com").build();
 
         when(bookService.findById(bookId)).thenReturn(Optional.of(book));
         when(userService.findById(userId)).thenReturn(Optional.of(user));
-        when(reservationRepository.save(any())).thenReturn(reservation);
-        when(bookService.save(any())).thenReturn(book);
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Reservation result = reservationService.reserveBook(bookId, userId);
+        Reservation reservation = reservationService.reserveBook(bookId, userId);
 
-        assertNotNull(result);
-        assertEquals(book, result.getBook());
-        assertEquals(user, result.getUser());
-        assertEquals(reservation.getReservedAt(), result.getReservedAt());
-        assertEquals(reservation.getPickUpBy(), result.getPickUpBy());
+        Assertions.assertNotNull(reservation);
+        Assertions.assertEquals(book, reservation.getBook());
+        Assertions.assertEquals(user, reservation.getUser());
+        Assertions.assertEquals(4, book.getQuantityAvailable());
+        verify(bookService, times(1)).save(book);
     }
 
     @Test
-    void reserveBook_bookNotAvailable_exceptionThrown() {
+    public void reserveBook_ShouldThrowEntityNotFoundExceptionWhenBookNotFound() {
         Long bookId = 1L;
         Long userId = 2L;
 
-        Book book = new Book();
-        book.setQuantityAvailable(0);
+        when(bookService.findById(bookId)).thenReturn(Optional.empty());
 
-        User user = new User();
+        Assertions.assertThrows(EntityNotFoundException.class, () -> reservationService.reserveBook(bookId, userId));
+        verify(bookService, times(0)).save(any(Book.class));
+    }
+
+    @Test
+    public void reserveBook_ShouldThrowEntityNotFoundExceptionWhenUserNotFound() {
+        Long bookId = 1L;
+        Long userId = 2L;
+        Book book = Book.builder().id(bookId).title("Test Book").quantityAvailable(3).build();
+
+        when(bookService.findById(bookId)).thenReturn(Optional.of(book));
+        when(userService.findById(userId)).thenReturn(Optional.empty());
+
+        Assertions.assertThrows(EntityNotFoundException.class, () -> reservationService.reserveBook(bookId, userId));
+        verify(bookService, times(0)).save(any(Book.class));
+    }
+
+
+    @Test
+    public void reserveBook_ShouldThrowIllegalArgumentExceptionWhenBookNotAvailable() {
+        Long bookId = 1L;
+        Long userId = 2L;
+        Book book = Book.builder().id(bookId).title("Test Book").quantityAvailable(0).build();
+        User user = User.builder().id(userId).email("test@example.com").build();
 
         when(bookService.findById(bookId)).thenReturn(Optional.of(book));
         when(userService.findById(userId)).thenReturn(Optional.of(user));
 
-        assertThrows(IllegalArgumentException.class, () -> reservationService.reserveBook(bookId, userId));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> reservationService.reserveBook(bookId, userId));
+        verify(bookService, times(0)).save(any(Book.class));
     }
 
+
     @Test
-    void cancelReservation_validInput_success() {
+    public void cancelReservation_ShouldCancelReservationSuccessfully() {
         Long reservationId = 1L;
-
-        Book book = new Book();
-        book.setQuantityAvailable(1);
-
-        User user = new User();
-
-        Reservation reservation = new Reservation();
-        reservation.setId(reservationId);
-        reservation.setBook(book);
-        reservation.setUser(user);
+        Book book = Book.builder().id(1L).title("Test Book").quantityAvailable(2).build();
+        User user = User.builder().id(2L).email("test@example.com").build();
+        Reservation reservation = Reservation.builder().id(reservationId).book(book).user(user).build();
 
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
+        when(bookService.save(book)).thenReturn(book);
 
-        Reservation result = reservationService.cancelReservation(reservationId);
+        Reservation cancelledReservation = reservationService.cancelReservation(reservationId);
 
-        assertNotNull(result);
-        assertEquals(reservation, result);
-        verify(reservationRepository, times(1)).delete(reservation);
+        assertEquals(reservation, cancelledReservation);
+        assertEquals(3, book.getQuantityAvailable());
+        verify(reservationRepository).delete(reservation);
+        verify(bookService).save(book);
     }
 
     @Test
-    void checkOutBook_validInput_success() {
+    public void cancelReservation_ShouldThrowEntityNotFoundExceptionWhenReservationNotFound() {
         Long reservationId = 1L;
+        when(reservationRepository.findById(reservationId)).thenReturn(Optional.empty());
 
-        Book book = new Book();
-        book.setQuantityAvailable(1);
+        assertThrows(EntityNotFoundException.class, () -> reservationService.cancelReservation(reservationId));
 
-        User user = new User();
+        verify(reservationRepository).findById(reservationId);
+        verifyNoMoreInteractions(reservationRepository);
+        verifyNoInteractions(bookService);
+    }
 
-        Reservation reservation = new Reservation();
-        reservation.setId(reservationId);
-        reservation.setBook(book);
-        reservation.setUser(user);
-        reservation.setCheckedOutAt(null);
-        reservation.setDueDate(null);
-        reservation.setReturned(false);
+    @Test
+    public void checkOutBook_ShouldCheckOutBookSuccessfully() {
+    }
+
+
+    @Test
+    public void checkOutBook_ShouldThrowEntityNotFoundExceptionWhenReservationNotFound() {
+        Long reservationId = 1L;
+        when(reservationRepository.findById(reservationId)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> reservationService.checkOutBook(reservationId));
+        verify(reservationRepository).findById(reservationId);
+        verifyNoMoreInteractions(reservationRepository);
+    }
+
+
+    @Test
+    public void checkInBook_ShouldCheckInBookSuccessfully() {
+        Long reservationId = 1L;
+        Reservation reservation = Reservation.builder()
+                .id(reservationId)
+                .book(new Book())
+                .user(new User())
+                .checkedOutAt(LocalDateTime.now().minusDays(1))
+                .dueDate(LocalDateTime.now().plusDays(13))
+                .returned(false)
+                .build();
 
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(reservationRepository.save(reservation)).thenReturn(reservation);
 
-        Reservation result = reservationService.checkOutBook(reservationId);
+        Reservation checkedInReservation = reservationService.checkInBook(reservationId);
 
-        assertNotNull(result);
-        assertEquals(reservation, result);
-        assertNotNull(result.getCheckedOutAt());
-        assertNotNull(result.getDueDate());
-        assertFalse(result.isReturned());
+        assertNotNull(checkedInReservation);
+        assertTrue(checkedInReservation.isReturned());
+
+        verify(reservationRepository).findById(reservationId);
+        verify(reservationRepository).save(reservation);
+        verifyNoMoreInteractions(reservationRepository);
     }
 
     @Test
-    void checkInBook_validInput_success() {
-        Long reservationId = 1L;
-
-        Book book = new Book();
-        book.setQuantityAvailable(1);
-
-        User user = new User();
-
-        Reservation reservation = new Reservation();
-        reservation.setId(reservationId);
-        reservation.setBook(book);
-        reservation.setUser(user);
-        reservation.setCheckedOutAt(LocalDateTime.now());
-        reservation.setDueDate(LocalDateTime.now().plusDays(14));
-        reservation.setReturned(false);
-
-        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
-        when(reservationRepository.save(reservation)).thenReturn(reservation);
-
-
-        Reservation result = reservationService.checkInBook(reservationId);
-
-        assertNotNull(result);
-        assertEquals(reservation, result);
-        assertTrue(result.isReturned());
-    }
-
-    @Test
-    void findAllReservations_validInput_success() {
-        int page = 0;
-        int size = 10;
-        String sortField = "reservedAt";
-        String sortDirection = "asc";
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortField).ascending());
-
-        List<Reservation> reservations = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            Reservation reservation = new Reservation();
-            reservation.setId((long) i);
-            reservation.setBook(new Book());
-            reservation.setUser(new User());
-            reservation.setReservedAt(LocalDateTime.now());
-            reservation.setPickUpBy(LocalDateTime.now().plusDays(7));
-            reservations.add(reservation);
-        }
-
-        Page<Reservation> reservationsPage = new PageImpl<>(reservations, pageable, reservations.size());
-
-        when(reservationRepository.findAll(pageable)).thenReturn(reservationsPage);
-
-        Page<Reservation> result = reservationService.findAllReservations(page, size, sortField, sortDirection);
-
-        assertNotNull(result);
-        assertEquals(reservations.size(), result.getContent().size());
-        assertEquals(reservations.get(0), result.getContent().get(0));
-    }
-
-
-
-    @Test
-    void findReservationById_validInput_success() {
-        Long reservationId = 1L;
-
-        Book book = new Book();
-        book.setQuantityAvailable(1);
-
-        User user = new User();
-
-        Reservation reservation = new Reservation();
-        reservation.setId(reservationId);
-        reservation.setBook(book);
-        reservation.setUser(user);
-
-        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
-
-        Reservation result = reservationService.findReservationById(reservationId);
-
-        assertNotNull(result);
-        assertEquals(reservation, result);
-    }
-
-    @Test
-    void findReservationById_invalidInput_exceptionThrown() {
-        Long reservationId = 1L;
+    public void checkInBook_ShouldThrowEntityNotFoundExceptionWhenReservationNotFound() {
+        Long reservationId = 100L;
 
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> reservationService.findReservationById(reservationId));
+        assertThrows(EntityNotFoundException.class, () -> {
+            reservationService.checkInBook(reservationId);
+        });
+
+        verify(reservationRepository, times(1)).findById(reservationId);
+        verifyNoMoreInteractions(reservationRepository);
+    }
+
+
+    @Test
+    void findAllReservations_ShouldReturnPageOfReservations() {
+        int page = 0;
+        int size = 10;
+        String sortField = "id";
+        String sortDirection = "asc";
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        BookService bookService = mock(BookService.class);
+        UserService userService = mock(UserService.class);
+        EmailService emailService = mock(EmailService.class);
+        ReservationServiceImpl reservationService = new ReservationServiceImpl(reservationRepository, bookService, userService, emailService);
+        List<Reservation> reservations = Collections.singletonList(new Reservation());
+        Page<Reservation> expectedPage = new PageImpl<>(reservations);
+
+        when(reservationRepository.findAll(any(Pageable.class))).thenReturn(expectedPage);
+
+        Page<Reservation> result = reservationService.findAllReservations(page, size, sortField, sortDirection);
+
+        verify(reservationRepository).findAll(any(Pageable.class));
+        assertEquals(expectedPage, result);
+    }
+
+
+    @Test
+    void findReservationById_ShouldReturnReservationWhenIdExists() {
+        Reservation reservation = Reservation.builder()
+                .id(1L)
+                .build();
+        when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+
+        Reservation result = reservationService.findReservationById(1L);
+
+        assertEquals(reservation, result);
+    }
+
+
+
+    @Test
+    public void findReservationById_ShouldThrowEntityNotFoundExceptionWhenIdDoesNotExist() {
+        when(reservationRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> {
+            reservationService.findReservationById(1L);
+        });
     }
 
     @Test
-    void findReservationsByUserId_validInput_success() {
+    void findReservationsByUserId_ShouldReturnReservationsForUser() {
         Long userId = 1L;
-        User user = new User();
+        User user = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .password("password")
+                .firstname("John")
+                .lastname("Doe")
+                .build();
+        Reservation reservation1 = Reservation.builder()
+                .id(1L)
+                .book(Book.builder()
+                        .id(1L)
+                        .ISBN("1234567890")
+                        .title("Book 1")
+                        .author("Author 1")
+                        .quantityAvailable(1)
+                        .build())
+                .user(user)
+                .reservedAt(LocalDateTime.now())
+                .pickUpBy(LocalDateTime.now().plusDays(7))
+                .build();
+        Reservation reservation2 = Reservation.builder()
+                .id(2L)
+                .book(Book.builder()
+                        .id(2L)
+                        .ISBN("0987654321")
+                        .title("Book 2")
+                        .author("Author 2")
+                        .quantityAvailable(1)
+                        .build())
+                .user(user)
+                .reservedAt(LocalDateTime.now())
+                .pickUpBy(LocalDateTime.now().plusDays(7))
+                .build();
 
-        List<Reservation> reservations = new ArrayList<>();
-        for (int i = 0; i < 3; i++) {
-            Reservation reservation = new Reservation();
-            reservation.setId((long) i);
-            reservation.setBook(new Book());
-            reservation.setUser(new User());
-            reservation.setReservedAt(LocalDateTime.now());
-            reservation.setPickUpBy(LocalDateTime.now().plusDays(7));
-            reservations.add(reservation);
-        }
         when(userService.findById(userId)).thenReturn(Optional.of(user));
-        when(reservationService.findReservationsByUserId(userId)).thenReturn(reservations);
+        when(reservationRepository.findReservationsByUserId(userId)).thenReturn(Arrays.asList(reservation1, reservation2));
 
-        List<Reservation> result = reservationService.findReservationsByUserId(userId);
+        List<Reservation> reservations = reservationService.findReservationsByUserId(userId);
 
-        assertNotNull(result);
-        assertEquals(reservations.size(), result.size());
-        assertEquals(reservations.get(0), result.get(0));
+        assertEquals(2, reservations.size());
+        assertEquals(reservation1, reservations.get(0));
+        assertEquals(reservation2, reservations.get(1));
     }
 
 
-//    @Test
-//    void extendDueDate_validInput_success(){
-//        Long reservationId = 1L;
-//        Book book = new Book();
-//        book.setQuantityAvailable(1);
-//
-//        User user = new User();
-//
-//        Reservation reservation = new Reservation();
-//        reservation.setId(reservationId);
-//        reservation.setBook(book);
-//        reservation.setUser(user);
-//        reservation.setDueDate(LocalDateTime.now().plusDays(14));
-//
-//        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
-//        when(reservationRepository.save(any())).thenReturn(reservation);
-//
-//        Reservation result = reservationService.extendDueDate(reservationId);
-//
-//        assertNotNull(result);
-//        assertEquals(reservation.getDueDate().plusDays(7), result.getDueDate());
-//    }
+    @Test
+    public void findReservationsByUserId_ShouldThrowEntityNotFoundExceptionWhenUserNotFound() {
+        long userId = 1L;
+        when(userService.findById(anyLong())).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> {
+            reservationService.findReservationsByUserId(userId);
+        });
+    }
 
     @Test
-    void purgeNonPickedUpReservations_validInput_success() {
-        LocalDateTime now = LocalDateTime.now();
+    public void extendDueDate_ShouldExtendDueDateSuccessfully() {
+        Long reservationId = 1L;
+        LocalDateTime dueDate = LocalDateTime.now().plusDays(14);
+        Reservation reservation = Reservation.builder()
+                .id(reservationId)
+                .dueDate(dueDate)
+                .build();
 
-        List<Reservation> overdueReservations = new ArrayList<>();
-        for (int i = 0; i < 3; i++) {
-            Reservation reservation = new Reservation();
-            reservation.setId((long) i);
-            reservation.setBook(new Book());
-            reservation.setUser(new User());
-            reservation.setReservedAt(now.minusDays(10));
-            reservation.setPickUpBy(now.minusDays(3));
-            overdueReservations.add(reservation);
-        }
+        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
+        when(reservationRepository.save(reservation)).thenReturn(reservation);
 
-        when(reservationRepository.findAllByPickUpByBeforeAndCheckedOutAtIsNull(now)).thenReturn(overdueReservations);
+        Reservation result = reservationService.extendDueDate(reservationId);
+
+        assertEquals(result.getId(), reservationId);
+        assertEquals(result.getDueDate(), dueDate.plusDays(7));
+    }
+
+    @Test
+    public void extendDueDate_ShouldThrowEntityNotFoundExceptionWhenReservationNotFound() {
+        long reservationId = 1L;
+        when(reservationRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> reservationService.extendDueDate(reservationId));
+        verify(reservationRepository).findById(reservationId);
+    }
+
+    @Test
+    public void findOverdueCheckins_ShouldReturnOverdueCheckins() {
+
+    }
+
+
+    @Test
+    void purgeNonPickedUpReservations_ShouldPurgeReservations() {
+        Book book = Book.builder()
+                .title("The Test Book")
+                .author("Test Author")
+                .ISBN("1234567890123")
+                .quantityAvailable(1)
+                .build();
+        bookService.save(book);
+        User user = User.builder()
+                .firstname("John")
+                .lastname("Doe")
+                .email("john.doe@test.com")
+                .password("password")
+                .build();
+        userService.save(user);
+        Reservation reservation = Reservation.builder()
+                .book(book)
+                .user(user)
+                .reservedAt(LocalDateTime.now().minusDays(3))
+                .pickUpBy(LocalDateTime.now().minusDays(1))
+                .build();
+        reservationRepository.save(reservation);
 
         reservationService.purgeNonPickedUpReservations();
 
-        verify(reservationRepository, times(3)).delete(any());
+        assertThrows(EntityNotFoundException.class, () -> reservationService.findReservationById(reservation.getId()));
     }
 
     @Test
-    void findOverduePickups_validInput_success() {
-        LocalDateTime now = LocalDateTime.now();
+    public void findOverduePickups_ShouldReturnOverduePickups() {
 
-        List<Reservation> overdueReservations = new ArrayList<>();
-        for (int i = 0; i < 3; i++) {
-            Reservation reservation = new Reservation();
-            reservation.setId((long) i);
-            reservation.setBook(new Book());
-            reservation.setUser(new User());
-            reservation.setReservedAt(now.minusDays(3));
-            reservation.setPickUpBy(now.minusDays(1));
-            overdueReservations.add(reservation);
-        }
+    }
 
-        when(reservationRepository.findAllByPickUpByBeforeAndCheckedOutAtIsNull(now)).thenReturn(overdueReservations);
 
-        List<Reservation> result = reservationService.findOverduePickups();
+    @Test
+    void addFine_ShouldAddFineToUser() {
+        Reservation reservation = Reservation.builder()
+                .id(1L)
+                .user(User.builder().id(1L).fine(0.0).build())
+                .lastFineAddedAt(null)
+                .build();
+        User user = User.builder().id(1L).fine(0.0).build();
+        when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+        when(userService.findById(1L)).thenReturn(Optional.of(user));
 
-        assertNotNull(result);
-        assertEquals(overdueReservations.size(), result.size());
-        assertEquals(overdueReservations.get(0), result.get(0));
+        reservationService.addFine(1L, 1L);
+
+        verify(userService, times(1)).addFine(user);
+        assertEquals(0.5, user.getFine());
+        assertEquals(LocalDate.now(), reservation.getLastFineAddedAt());
+        verify(emailService, times(1)).sendOverdueEmail(user.getEmail(), "Overdue Book Return", "You have been issued a 50c charge for overdue book return.");
     }
 
     @Test
-    void addFine_validInput_success() {
-        Long reservationId = 1L;
-        Long userId = 2L;
-
-        User user = new User();
-        user.setFine(0);
-
-        Reservation reservation = new Reservation();
-        reservation.setId(reservationId);
-        reservation.setBook(new Book());
-        reservation.setUser(user);
-        reservation.setDueDate(LocalDate.now().minusDays(3).atStartOfDay());
-        when(userService.findById(userId)).thenReturn(Optional.of(user));
-        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
-        when(reservationRepository.save(any())).thenReturn(reservation);
-
-        reservationService.addFine(reservationId, userId);
-
-        assertEquals(0.5, user.getFine(), 0.001);
-        assertNotNull(reservation.getLastFineAddedAt());
+    void addFine_ShouldThrowEntityNotFoundExceptionWhenUserNotFound() {
+        Long userId = 1L;
+        Long reservationId = 2L;
+        when(userService.findById(anyLong())).thenReturn(Optional.empty());
+        assertThrows(EntityNotFoundException.class, () -> reservationService.addFine(reservationId, userId));
     }
 
+    @Test
+    void addFine_ShouldThrowEntityNotFoundExceptionWhenReservationNotFound() {
+        when(userService.findById(anyLong())).thenReturn(Optional.empty());
 
+        assertThrows(EntityNotFoundException.class, () -> {
+            reservationService.addFine(1L, 1L);
+        });
+    }
 }
