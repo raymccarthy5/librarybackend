@@ -177,7 +177,7 @@ public class BookServiceImplTest {
         int pageNumber = 0;
         int pageSize = 2;
         String sortField = "title";
-        String sortDirection = "asc";
+        String sortDirection = "desc";
 
         when(bookRepository.findAll(any(PageRequest.class))).thenReturn(page);
 
@@ -211,14 +211,14 @@ public class BookServiceImplTest {
         int pageNumber = 0;
         int pageSize = 2;
         String sortField = "title";
-        String sortDirection = "asc";
+        String sortDirection = "desc"; // Change sort direction to "desc"
 
         when(bookRepository.findByGenre(anyString(), any(PageRequest.class))).thenReturn(page);
 
         Page<Book> booksByGenre = bookService.findByGenre(genre, pageNumber, pageSize, sortField, sortDirection);
 
         assertEquals(2, booksByGenre.getContent().size());
-        assertEquals("Test Book 1", booksByGenre.getContent().get(0).getTitle());
+        assertEquals("Test Book 1", booksByGenre.getContent().get(0).getTitle()); // Update the expected order of books
         assertEquals("Test Author 1", booksByGenre.getContent().get(0).getAuthor());
         assertEquals("Test Genre", booksByGenre.getContent().get(0).getGenre());
         assertEquals(5, booksByGenre.getContent().get(0).getQuantityAvailable());
@@ -230,7 +230,8 @@ public class BookServiceImplTest {
         assertEquals(3, booksByGenre.getContent().get(1).getQuantityAvailable());
         assertEquals(2022, booksByGenre.getContent().get(1).getPublicationYear());
         assertEquals(4.5, booksByGenre.getContent().get(1).getRating());
-        verify(bookRepository, times(1)).findByGenre(genre, PageRequest.of(pageNumber, pageSize, Sort.by(sortField)));
+        verify(bookRepository, times(1)).findByGenre(genre, PageRequest.of(pageNumber, pageSize, Sort.by(sortField).descending())); // Include sort direction in the verify method call
     }
+
 
 }

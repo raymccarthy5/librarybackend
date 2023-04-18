@@ -136,6 +136,31 @@ public class ReservationServiceImplTest {
 
     @Test
     public void checkOutBook_ShouldCheckOutBookSuccessfully() {
+        Long reservationId = 1L;
+
+        Book book = new Book();
+        book.setQuantityAvailable(1);
+
+        User user = new User();
+
+        Reservation reservation = new Reservation();
+        reservation.setId(reservationId);
+        reservation.setBook(book);
+        reservation.setUser(user);
+        reservation.setCheckedOutAt(null);
+        reservation.setDueDate(null);
+        reservation.setReturned(false);
+
+        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
+        when(reservationRepository.save(reservation)).thenReturn(reservation);
+
+        Reservation result = reservationService.checkOutBook(reservationId);
+
+        assertNotNull(result);
+        assertEquals(reservation, result);
+        assertNotNull(result.getCheckedOutAt());
+        assertNotNull(result.getDueDate());
+        assertFalse(result.isReturned());
     }
 
 
@@ -320,13 +345,6 @@ public class ReservationServiceImplTest {
         assertThrows(EntityNotFoundException.class, () -> reservationService.extendDueDate(reservationId));
         verify(reservationRepository).findById(reservationId);
     }
-
-    @Test
-    public void findOverdueCheckins_ShouldReturnOverdueCheckins() {
-
-    }
-
-
     @Test
     void purgeNonPickedUpReservations_ShouldPurgeReservations() {
         Book book = Book.builder()

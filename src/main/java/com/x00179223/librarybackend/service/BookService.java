@@ -14,6 +14,6 @@ public interface BookService {
     void delete(Long id);
     Book update(Long id, Book book);
     List<Book> searchByTitleOrAuthorOrGenre(String query) throws JsonProcessingException;
-    public List<String> findDistinctGenres();
+    List<String> findDistinctGenres();
     Page<Book> findByGenre(String genre, int page, int size, String sortField, String sortDirection);
 }

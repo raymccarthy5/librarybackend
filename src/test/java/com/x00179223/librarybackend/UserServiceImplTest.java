@@ -140,6 +140,10 @@ public class UserServiceImplTest {
 
         assertTrue(result.isPresent());
         assertEquals(existingUser, result.get());
+        assertTrue(existingUser.isAccountNonExpired());
+        assertTrue(existingUser.isCredentialsNonExpired());
+        assertTrue(existingUser.isAccountNonLocked());
+        assertTrue(existingUser.isEnabled());
         verify(userRepository, times(1)).findById(existingUserId);
     }
 
@@ -211,10 +215,8 @@ public class UserServiceImplTest {
                 .password("password")
                 .build();
 
-        UserUpdateRequest updateRequest = new UserUpdateRequest();
-        updateRequest.setEmail("updated@example.com");
-        updateRequest.setFirstname("Jane");
-        updateRequest.setLastname("Smith");
+        UserUpdateRequest updateRequest = UserUpdateRequest.builder().email("updated@example.com")
+                .firstname("Jane").lastname("Smith").build();
 
         User updatedUser = User.builder()
                 .id(existingUserId)
