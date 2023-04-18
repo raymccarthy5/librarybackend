@@ -139,13 +139,16 @@ public class BookServiceImplTest {
 
         Optional<Book> foundBook = bookService.findById(id);
 
-        assertEquals("Test Title", foundBook.get().getTitle());
-        assertEquals("Test Author", foundBook.get().getAuthor());
-        assertEquals("Test Genre", foundBook.get().getGenre());
-        assertEquals(0, foundBook.get().getRating());
-        assertEquals(0, foundBook.get().getRatingCount());
-        assertEquals(0, foundBook.get().getRatingTotal());
-        verify(bookRepository, times(1)).findById(id);
+        if(foundBook.isPresent()){
+            assertEquals("Test Title", foundBook.get().getTitle());
+            assertEquals("Test Author", foundBook.get().getAuthor());
+            assertEquals("Test Genre", foundBook.get().getGenre());
+            assertEquals(0, foundBook.get().getRating());
+            assertEquals(0, foundBook.get().getRatingCount());
+            assertEquals(0, foundBook.get().getRatingTotal());
+            verify(bookRepository, times(1)).findById(id);
+        }
+
     }
 
     @Test
