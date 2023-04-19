@@ -34,3 +34,16 @@ jobs:
 
     - name: Run OWASP Dependency-Check
       run: mvn org.owasp:dependency-check-maven:check
+
+    - name: Copy dependency-check-report to root directory
+      run: cp target/dependency-check-report.html .
+
+    - name: Deploy report to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./  # Change this to the root directory
+        publish_branch: gh-pages
+        enable_jekyll: false
+        force_orphan: true
+
