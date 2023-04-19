@@ -1,2 +1,11 @@
 runtime: java18
 entrypoint: 'java -jar librarybackend-0.0.2-SNAPSHOT.jar'
+spring:
+  datasource:
+    url: jdbc:mysql://eu-cdbr-west-03.cleardb.net:3306/heroku_ac6fbcff06c2e36
+    username: beb7489dc69705
+    password: fdc02e11
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
