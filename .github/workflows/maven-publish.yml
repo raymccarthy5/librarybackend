@@ -1,6 +1,9 @@
 name: Maven Package
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - 'target/dependency-check-report.html'
 
 jobs:
   build:
@@ -35,15 +38,10 @@ jobs:
     - name: Run OWASP Dependency-Check
       run: mvn org.owasp:dependency-check-maven:check
 
-    - name: Copy dependency-check-report to root directory
-      run: cp target/dependency-check-report.html .
-
-    - name: Deploy report to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./  # Change this to the root directory
-        publish_branch: gh-pages
-        enable_jekyll: false
-        force_orphan: true
-
+    - name: Commit and push dependency-check report to main branch
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "ray92mc@gmail.com"
+        git add ./target/dependency-check-report.html
+        git commit -m "Update dependency-check report"
+        git push origin main
