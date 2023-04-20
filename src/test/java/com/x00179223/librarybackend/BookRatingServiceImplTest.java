@@ -109,7 +109,7 @@ class BookRatingServiceImplTest {
 
     @Test
     void rateBook_whenUserHasAlreadyRatedBook_shouldUpdateExistingRating() {
-
+        //demo
         book.setRatingCount(1);
         book.setRatingTotal(userBookRating.getRating());
 
