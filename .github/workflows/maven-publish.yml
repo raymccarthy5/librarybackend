@@ -1,6 +1,9 @@
 name: Maven Package
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -34,4 +37,12 @@ jobs:
 
     - name: Run OWASP Dependency-Check
       run: mvn org.owasp:dependency-check-maven:check
-
+    
+    - name: Deploy OWASP Dependency-Check report to GitHub Pages
+      run: |
+        git fetch
+        git checkout gh-pages
+        cp target/dependency-check-report.html .
+        git add dependency-check-report.html
+        git commit -m "Update OWASP Dependency-Check report"
+        git push origin gh-pages
