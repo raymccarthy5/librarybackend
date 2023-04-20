@@ -37,12 +37,19 @@ jobs:
 
     - name: Run OWASP Dependency-Check
       run: mvn org.owasp:dependency-check-maven:check
-    
-    - name: Deploy OWASP Dependency-Check report to GitHub Pages
+
+    - name: Switch to gh-pages branch
       run: |
+        git config user.name "GitHub Actions"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
         git fetch
         git checkout gh-pages
-        cp target/dependency-check-report.html .
+
+    - name: Copy dependency-check report to root
+      run: cp target/dependency-check-report.html .
+
+    - name: Commit and push the report
+      run: |
         git add dependency-check-report.html
-        git commit -m "Update OWASP Dependency-Check report"
+        git commit -m "Update dependency-check report"
         git push origin gh-pages
