@@ -38,18 +38,14 @@ jobs:
     - name: Run OWASP Dependency-Check
       run: mvn org.owasp:dependency-check-maven:check
 
-    - name: Switch to gh-pages branch
-      run: |
-        git config user.name "GitHub Actions"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git fetch
-        git checkout gh-pages
-
     - name: Copy dependency-check report to root
       run: cp target/dependency-check-report.html .
 
-    - name: Commit and push the report
-      run: |
-        git add dependency-check-report.html
-        git commit -m "Update dependency-check report"
-        git push origin gh-pages
+    - name: Deploy report to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GH_PAGES_PAT }} # Use the new secret here
+        publish_dir: ./
+        publish_branch: gh-pages
+        enable_jekyll: false
+        force_orphan: true
