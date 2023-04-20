@@ -140,6 +140,8 @@
 				</executions>
 				<configuration>
 					<excludes>
+						<exclude>**/com/x00179223/librarybackend/controller/**/*.class</exclude>
+						<exclude>**/com/x00179223/librarybackend/dto/**/*.class</exclude>
 						<exclude>**/*Test.class</exclude>
 					</excludes>
 				</configuration>
