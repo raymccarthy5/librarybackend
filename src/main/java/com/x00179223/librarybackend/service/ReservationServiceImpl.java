@@ -144,6 +144,18 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    public void cancelReservationsForUser(Long userId) {
+        User user = userService.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        List<Reservation> reservations = reservationRepository.findReservationsByUserId(userId);
+        if(user.getFine() > 0.0){
+            throw new RuntimeException("Can't delete user with unpaid fine");
+        }
+        for(Reservation reservation : reservations){
+            cancelReservation(reservation.getId());
+        }
+    }
+
+    @Override
     public void addFine(Long reservationId, Long userId) {
         User user = userService.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
         Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(() -> new EntityNotFoundException("Reservation not found"));

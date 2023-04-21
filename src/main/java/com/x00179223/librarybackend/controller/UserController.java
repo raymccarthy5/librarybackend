@@ -4,6 +4,7 @@ import com.x00179223.librarybackend.model.Book;
 import com.x00179223.librarybackend.dto.BookIdUserIdRequest;
 import com.x00179223.librarybackend.model.User;
 import com.x00179223.librarybackend.dto.UserUpdateRequest;
+import com.x00179223.librarybackend.service.ReservationService;
 import com.x00179223.librarybackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,8 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private ReservationService reservationService;
 
     @GetMapping
     public Page<User> findAll(@RequestParam(defaultValue = "0") int page,
@@ -47,6 +50,9 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id){
+
+        reservationService.cancelReservationsForUser(id);
+
         userService.deleteById(id);
     }
 

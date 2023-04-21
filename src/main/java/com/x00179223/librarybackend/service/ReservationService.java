@@ -29,4 +29,5 @@ public interface ReservationService {
 
     List<Reservation> findOverduePickups();
 
+    void cancelReservationsForUser(Long id);
 }
