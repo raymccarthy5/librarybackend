@@ -106,14 +106,13 @@ public class ReservationServiceImpl implements ReservationService {
     public Reservation extendDueDate(Long reservationId) {
         Reservation reservation = findReservationById(reservationId);
         reservation.setDueDate(reservation.getDueDate().plusDays(7));
-        return reservationRepository.save(        reservation);
+        return reservationRepository.save(reservation);
     }
 
     @Scheduled(fixedRate = 4 * 60 * 60 * 1000L) // run every 4 hours (1000=1second)
     @Override
     public List<Reservation> findOverdueCheckins() {
         try {
-            System.out.println("Checking for overdue reservations");
             LocalDateTime now = LocalDateTime.now();
             List<Reservation> overdueReservations = reservationRepository.findAllByCheckedOutAtIsNotNullAndDueDateBeforeAndReturnedIsFalse(now);
             for (Reservation reservation : overdueReservations) {
@@ -132,9 +131,9 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public void purgeNonPickedUpReservations() {
         LocalDateTime now = LocalDateTime.now();
-        List<Reservation> overdueReservations = reservationRepository.findAllByPickUpByBeforeAndCheckedOutAtIsNull(now);
-        for (Reservation reservation : overdueReservations) {
-            reservationRepository.delete(reservation);
+        List<Reservation> overduePickUps = reservationRepository.findAllByPickUpByBeforeAndCheckedOutAtIsNull(now);
+        for (Reservation reservation : overduePickUps) {
+            cancelReservation(reservation.getId());
         }
     }
     @Override

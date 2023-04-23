@@ -50,9 +50,7 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id){
-
         reservationService.cancelReservationsForUser(id);
-
         userService.deleteById(id);
     }
 

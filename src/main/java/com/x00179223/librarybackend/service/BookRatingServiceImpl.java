@@ -35,7 +35,6 @@ public class BookRatingServiceImpl implements BookRatingService  {
         UserBookRating userBookRating = bookRatingRepository.findByUserAndBook(user, book);
 
         int newRatingCount = book.getRatingCount();
-        System.out.println("New rating count: " + newRatingCount);
 
         if (userBookRating == null) {
             userBookRating = new UserBookRating();
@@ -43,23 +42,17 @@ public class BookRatingServiceImpl implements BookRatingService  {
             userBookRating.setBook(book);
             newRatingCount += 1;
         } else {
-            System.out.println("Old rating total: " + book.getRatingTotal());
-            System.out.println("Old user book rating: " + userBookRating.getRating());
             book.setRatingTotal(book.getRatingTotal() - userBookRating.getRating());
         }
 
-        double longRating = rating;
-        System.out.println("Long rating: " + longRating);
+        double doubleRating = rating;
 
-
-        userBookRating.setRating(longRating);
+        userBookRating.setRating(doubleRating);
         bookRatingRepository.save(userBookRating);
-        double newRatingTotal = book.getRatingTotal() + longRating;
-        System.out.println("New rating total: " + newRatingTotal);
+        double newRatingTotal = book.getRatingTotal() + doubleRating;
 
         double newRating = BigDecimal.valueOf(newRatingTotal / newRatingCount)
                 .setScale(2, RoundingMode.HALF_UP).doubleValue();
-        System.out.println("New rating: " + newRating);
 
         book.setRating(newRating);
         book.setRatingTotal(newRatingTotal);
